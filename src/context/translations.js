@@ -168,6 +168,7 @@ export const translations = {
     sendReadyUpdate: "Send Ready Update",
     shirtsTab: "Shirts",
     pantsTab: "Pants",
+    ordersWord: "Orders",
     collarCuff: "Collar / Cuff",
     noStylesSelected: "No styles selected",
 
@@ -372,6 +373,7 @@ export const translations = {
     sendReadyUpdate: "रेडी अपडेट पाठवा",
     shirtsTab: "शर्ट्स",
     pantsTab: "पॅंट्स",
+    ordersWord: "ऑर्डर्स",
     collarCuff: "कॉलर / कफ",
     noStylesSelected: "कोणतीही स्टाईल निवडली नाही",
     village:"गावाचे नाव टाका",
@@ -575,6 +577,7 @@ export const translations = {
     sendReadyUpdate: "रेडी अपडेट भेजें",
     shirtsTab: "शर्ट्स",
     pantsTab: "पैंट्स",
+    ordersWord: "ऑर्डर्स",
     collarCuff: "कॉलर / कफ",
     noStylesSelected: "कोई स्टाइल नहीं चुनी गई",
     enterName: "नाम दर्ज करें",

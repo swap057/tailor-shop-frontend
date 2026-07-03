@@ -22,7 +22,9 @@ import {
   FaRulerVertical,
   FaEdit,
   FaSave,
-  FaTimes
+  FaTimes,
+  FaChevronDown,
+  FaChevronRight
 } from "react-icons/fa";
 import { useLang } from "../context/LangContext";
 import axios from "axios";
@@ -51,6 +53,8 @@ const PendingWork = () => {
   const [isEditingMeas, setIsEditingMeas] = useState(false);
   const [isSavingMeas, setIsSavingMeas] = useState(false);
   const [measForm, setMeasForm] = useState({});
+  const [expanded, setExpanded] = useState({});
+  const toggleExpand = (mobile) => setExpanded((prev) => ({ ...prev, [mobile]: !prev[mobile] }));
 
   const startEditMeas = () => {
     setMeasForm({
@@ -295,6 +299,56 @@ const PendingWork = () => {
     return <Badge bg="secondary">{t('statusPending')}</Badge>;
   };
 
+  const orderItemsLabel = (o) => {
+    const parts = [];
+    if (o.shirtQty > 0) parts.push(`${o.shirtQty} ${t('shirtsTab')}`);
+    if (o.pantQty > 0) parts.push(`${o.pantQty} ${t('pantsTab')}`);
+    return `${t('orderBtn')} #${o.orderId}${parts.length ? " · " + parts.join(", ") : ""}`;
+  };
+
+  // Renders a single order row. isSub = a child row inside an expanded customer group.
+  const renderOrderRow = (order, isSub) => {
+    const deadlineStyle = getDeadlineStyle(order.deadlineDate);
+    return (
+      <tr key={order.orderId} style={{ cursor: "pointer" }} className={isSub ? "table-light" : ""} onClick={() => handleRowClick(order.orderId)}>
+        <td className={isSub ? "ps-5" : "ps-3"} style={{ fontSize: "14px" }}>
+          <div style={{ ...deadlineStyle, fontSize: "15px" }}>
+            {deadlineStyle.label === "TODAY" || deadlineStyle.label === "OVERDUE" ? <FaExclamationTriangle className="me-1" /> : null}
+            {renderDeadlineLabel(deadlineStyle)}
+          </div>
+        </td>
+        <td>
+          {isSub ? (
+            <small className="text-muted">↳ {orderItemsLabel(order)}</small>
+          ) : (
+            <>
+              <div className="fw-bold text-dark">{order.fullName}</div>
+              <small className="text-muted">{order.mobileNo}</small>
+            </>
+          )}
+        </td>
+        <td className="text-center">
+          {getStatusBadge(order.shirtCompletedQty, order.shirtQty)}
+          <div style={{ fontSize: "11px" }} className="text-muted mt-1">{order.shirtCompletedQty} / {order.shirtQty}</div>
+        </td>
+        <td className="text-center">
+          {getStatusBadge(order.pantCompletedQty, order.pantQty)}
+          <div style={{ fontSize: "11px" }} className="text-muted mt-1">{order.pantCompletedQty} / {order.pantQty}</div>
+        </td>
+        <td className="text-end pe-3">
+          <div className="d-flex justify-content-end gap-2 align-items-center">
+            <Button variant="success" size="sm" className="rounded-circle" style={{ width: "32px", height: "32px", padding: 0 }} onClick={(e) => sendWhatsApp(e, order.mobileNo, order.fullName)} title={t('sendReadyUpdate')}>
+              <FaWhatsapp size={16} />
+            </Button>
+            <Button variant="light" size="sm" className="rounded-circle text-primary border" style={{ width: "32px", height: "32px", padding: 0 }}>
+              <FaEye size={16} />
+            </Button>
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
   return (
     <div className="p-4" style={{ paddingBottom: "100px" }}>
       <div className="d-flex justify-content-between align-items-center mb-3">
@@ -323,41 +377,59 @@ const PendingWork = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredOrders.map((order) => {
-              const deadlineStyle = getDeadlineStyle(order.deadlineDate);
-              return (
-                <tr key={order.orderId} style={{ cursor: "pointer" }} onClick={() => handleRowClick(order.orderId)}>
-                  <td className="ps-3" style={{ fontSize: "14px" }}>
-                    <div style={{ ...deadlineStyle, fontSize: "15px" }}>
-                      {deadlineStyle.label === "TODAY" || deadlineStyle.label === "OVERDUE" ? <FaExclamationTriangle className="me-1" /> : null}
-                      {renderDeadlineLabel(deadlineStyle)}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="fw-bold text-dark">{order.fullName}</div>
-                    <small className="text-muted">{order.mobileNo}</small>
-                  </td>
-                  <td className="text-center">
-                    {getStatusBadge(order.shirtCompletedQty, order.shirtQty)}
-                    <div style={{ fontSize: "11px" }} className="text-muted mt-1">{order.shirtCompletedQty} / {order.shirtQty}</div>
-                  </td>
-                  <td className="text-center">
-                    {getStatusBadge(order.pantCompletedQty, order.pantQty)}
-                    <div style={{ fontSize: "11px" }} className="text-muted mt-1">{order.pantCompletedQty} / {order.pantQty}</div>
-                  </td>
-                  <td className="text-end pe-3">
-                    <div className="d-flex justify-content-end gap-2 align-items-center">
-                      <Button variant="success" size="sm" className="rounded-circle" style={{ width: "32px", height: "32px", padding: 0 }} onClick={(e) => sendWhatsApp(e, order.mobileNo, order.fullName)} title={t('sendReadyUpdate')}>
-                        <FaWhatsapp size={16} />
-                      </Button>
-                      <Button variant="light" size="sm" className="rounded-circle text-primary border" style={{ width: "32px", height: "32px", padding: 0 }}>
-                        <FaEye size={16} />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+            {(() => {
+              // Group the filtered orders by customer (mobile number), preserving order
+              const groups = [];
+              const idx = {};
+              filteredOrders.forEach((o) => {
+                if (idx[o.mobileNo] === undefined) {
+                  idx[o.mobileNo] = groups.length;
+                  groups.push({ fullName: o.fullName, mobileNo: o.mobileNo, orders: [] });
+                }
+                groups[idx[o.mobileNo]].orders.push(o);
+              });
+
+              return groups.map((group) => {
+                // A customer with a single pending order = a normal clickable row
+                if (group.orders.length === 1) {
+                  return renderOrderRow(group.orders[0], false);
+                }
+                // Multiple orders = one expandable customer row
+                const earliest = group.orders[0];
+                const eStyle = getDeadlineStyle(earliest.deadlineDate);
+                const isOpen = !!expanded[group.mobileNo];
+                return (
+                  <React.Fragment key={group.mobileNo}>
+                    <tr style={{ cursor: "pointer" }} className="bg-light" onClick={() => toggleExpand(group.mobileNo)}>
+                      <td className="ps-3" style={{ fontSize: "14px" }}>
+                        <div style={{ ...eStyle, fontSize: "15px" }}>
+                          {eStyle.label === "TODAY" || eStyle.label === "OVERDUE" ? <FaExclamationTriangle className="me-1" /> : null}
+                          {renderDeadlineLabel(eStyle)}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="fw-bold text-dark d-flex align-items-center gap-2">
+                          {isOpen ? <FaChevronDown size={12} /> : <FaChevronRight size={12} />}
+                          {group.fullName}
+                          <Badge bg="secondary" pill>{group.orders.length} {t('ordersWord')}</Badge>
+                        </div>
+                        <small className="text-muted">{group.mobileNo}</small>
+                      </td>
+                      <td className="text-center text-muted">—</td>
+                      <td className="text-center text-muted">—</td>
+                      <td className="text-end pe-3">
+                        <div className="d-flex justify-content-end gap-2 align-items-center">
+                          <Button variant="success" size="sm" className="rounded-circle" style={{ width: "32px", height: "32px", padding: 0 }} onClick={(e) => sendWhatsApp(e, group.mobileNo, group.fullName)} title={t('sendReadyUpdate')}>
+                            <FaWhatsapp size={16} />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                    {isOpen && group.orders.map((o) => renderOrderRow(o, true))}
+                  </React.Fragment>
+                );
+              });
+            })()}
           </tbody>
         </Table>
         {filteredOrders.length === 0 && <div className="text-center p-4 text-muted">{t('noOrdersFound')}</div>}
