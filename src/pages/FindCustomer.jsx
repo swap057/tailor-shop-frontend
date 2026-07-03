@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import {
   FaSearch, FaUser, FaPhone, FaMapMarkerAlt, FaWhatsapp,
   FaHistory, FaRulerCombined, FaPlus, FaArrowLeft, FaTshirt, FaRulerVertical,
-  FaEdit, FaSave, FaTimes
+  FaEdit, FaSave, FaTimes, FaTrash, FaUndo
 } from "react-icons/fa";
 import { useLang } from "../context/LangContext";
 import axios from "axios";
@@ -36,6 +36,8 @@ const FindCustomer = () => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [editForm, setEditForm] = useState({ fullName: "", mobileNo: "", address: "" });
+  const [showHidden, setShowHidden] = useState(false);
+  const [hiddenCustomers, setHiddenCustomers] = useState([]);
 
   useEffect(() => {
     fetchCustomers();
@@ -76,6 +78,44 @@ const FindCustomer = () => {
       showToast(backendMsg, "danger");
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const fetchHidden = async () => {
+    try {
+      const res = await axios.get("https://my-tailor-app-backend.onrender.com/hidden-customers");
+      setHiddenCustomers(res.data || []);
+    } catch (err) {
+      setHiddenCustomers([]);
+    }
+  };
+
+  const toggleShowHidden = () => {
+    const next = !showHidden;
+    setShowHidden(next);
+    if (next) fetchHidden();
+  };
+
+  const handleHideCustomer = async () => {
+    if (!window.confirm(`${t('confirmHide')} ${selectedCustomer.fullName}`)) return;
+    try {
+      await axios.post(`https://my-tailor-app-backend.onrender.com/hide-customer/${selectedCustomer.customerId}`);
+      showToast(t('customerHidden'), "success");
+      setSelectedCustomer(null);
+      fetchCustomers();
+    } catch (error) {
+      showToast(error.response?.data?.message || t('failedToSave'), "danger");
+    }
+  };
+
+  const handleRestoreCustomer = async (cust) => {
+    try {
+      await axios.post(`https://my-tailor-app-backend.onrender.com/restore-customer/${cust.customerId}`);
+      showToast(t('customerRestored'), "success");
+      fetchHidden();
+      fetchCustomers();
+    } catch (error) {
+      showToast(error.response?.data?.message || t('failedToSave'), "danger");
     }
   };
 
@@ -140,11 +180,50 @@ const FindCustomer = () => {
             <h4 className="fw-bolder text-dark mb-1">{t('customerDirectory')}</h4>
             <p className="text-muted small mb-0">{t('searchManageProfiles')}</p>
           </div>
-          <Button variant="primary" style={{ backgroundColor: "#f0a500", border: "none" }} className="fw-bold px-4 rounded-pill shadow-sm" onClick={() => navigate("/add-customer")}>
-            <FaPlus className="me-2" /> {t('newCustomer')}
-          </Button>
+          <div className="d-flex gap-2">
+            <Button variant={showHidden ? "dark" : "outline-secondary"} className="fw-bold px-3 rounded-pill" onClick={toggleShowHidden}>
+              {showHidden ? t('showActive') : t('showHidden')}
+            </Button>
+            {!showHidden && (
+              <Button variant="primary" style={{ backgroundColor: "#f0a500", border: "none" }} className="fw-bold px-4 rounded-pill shadow-sm" onClick={() => navigate("/add-customer")}>
+                <FaPlus className="me-2" /> {t('newCustomer')}
+              </Button>
+            )}
+          </div>
         </div>
 
+        {showHidden ? (
+          <Card className="shadow-sm border-0">
+            <Card.Header className="bg-white fw-bold text-dark py-3 ps-4">{t('hiddenTitle')}</Card.Header>
+            <Table hover responsive className="mb-0 align-middle">
+              <thead className="bg-light">
+                <tr>
+                  <th className="ps-4">{t('customerName')}</th>
+                  <th>{t('contactVillage')}</th>
+                  <th className="text-end pe-4">{t('actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hiddenCustomers.map(cust => (
+                  <tr key={cust.customerId}>
+                    <td className="ps-4 fw-bold text-dark fs-6">{cust.fullName}</td>
+                    <td>
+                      <div className="fw-bold text-secondary"><FaPhone className="me-1 small"/> {cust.mobileNo}</div>
+                      <small className="text-muted"><FaMapMarkerAlt className="me-1"/> {cust.address || t('noVillage')}</small>
+                    </td>
+                    <td className="text-end pe-4">
+                      <Button variant="success" size="sm" className="rounded-pill px-3 fw-bold" onClick={() => handleRestoreCustomer(cust)}>
+                        <FaUndo className="me-2" /> {t('restore')}
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+            {hiddenCustomers.length === 0 && <div className="text-center py-5 text-muted">{t('noHidden')}</div>}
+          </Card>
+        ) : (
+        <>
         <Card className="border-0 shadow-sm rounded-4 mb-4">
           <Card.Body className="p-3">
             <InputGroup size="lg">
@@ -213,6 +292,8 @@ const FindCustomer = () => {
             </div>
           )}
         </Card>
+        </>
+        )}
       </div>
     );
   }
@@ -260,6 +341,9 @@ const FindCustomer = () => {
                       <div className="fw-bold text-dark"><FaMapMarkerAlt className="me-2 text-danger" /> {selectedCustomer.address || t('notProvided')}</div>
                     </div>
                   </div>
+                  <Button variant="outline-danger" size="sm" className="w-100 mt-3 fw-bold rounded-pill" onClick={handleHideCustomer}>
+                    <FaTrash className="me-2" /> {t('removeCustomer')}
+                  </Button>
                 </>
               ) : (
                 <div className="text-start">
