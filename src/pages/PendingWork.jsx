@@ -24,7 +24,8 @@ import {
   FaSave,
   FaTimes,
   FaChevronDown,
-  FaChevronRight
+  FaChevronRight,
+  FaPrint
 } from "react-icons/fa";
 import { useLang } from "../context/LangContext";
 import axios from "axios";
@@ -33,6 +34,12 @@ import { useToast } from "../context/ToastContext";
 // Treats a measurement as "present" if it contains any non-zero digit.
 // Works for plain numbers ("6.00") and two-value strings ("12 / 6"); hides "0" / "0.00".
 const hasMeasureValue = (v) => v != null && String(v).trim() !== "" && /[1-9]/.test(String(v));
+
+// Escape user text before injecting into the print HTML
+const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// Shop name shown on the printed work-chit
+const SHOP_NAME = "NEW STAR MENS WEAR";
 
 const PendingWork = () => {
   const { t } = useLang();
@@ -117,6 +124,81 @@ const PendingWork = () => {
       />
     </Col>
   );
+
+  // Build and print small ~80mm work-chits (one for shirt, one for pant)
+  const printChits = () => {
+    if (!selectedOrder) return;
+    const o = selectedOrder;
+    const dateStr = formatDate(o.deadlineDate);
+
+    const rowsHtml = (pairs) => pairs
+      .filter(([, v]) => hasMeasureValue(v))
+      .map(([l, v]) => `<tr><td class="lbl">${escapeHtml(l)}</td><td class="val">${escapeHtml(v)}</td></tr>`)
+      .join("");
+
+    const chit = (isShirt) => {
+      const heading = isShirt ? t('shirt') : t('pant');
+      const qty = isShirt ? o.shirtQty : o.pantQty;
+      const styleStr = isShirt ? o.shirtStyle : o.pantStyle;
+      const note = isShirt ? o.shirtRemark : o.pantRemark;
+      const pairs = isShirt
+        ? [[t('length'), o.shirtLength], [t('front'), o.shirtFront], [t('shoulder'), o.shirtShoulder], [t('sleeve'), o.shirtSleeve], [t('collarCuff'), o.shirtCollar], [t('chest'), o.shirtChest], [t('halfSleeve'), o.shirtHalfSleeve]]
+        : [[t('length'), o.pantLength], [t('belowWaist'), o.pantBelowWaist], [t('waist'), o.pantWaist], [t('thigh'), o.pantThigh], [t('knee'), o.pantKnee], [t('bottom'), o.pantBottom]];
+      const styleClean = styleStr && styleStr !== "None" ? styleStr : "";
+      return `
+        <div class="chit">
+          <div class="shop">${escapeHtml(SHOP_NAME)}</div>
+          <div class="type">${escapeHtml(heading)} &times; ${escapeHtml(String(qty))}</div>
+          <div class="meta">${escapeHtml(o.fullName)}${o.mobileNo ? " &nbsp; " + escapeHtml(o.mobileNo) : ""}</div>
+          <div class="meta">#${escapeHtml(String(o.orderId))} &nbsp;|&nbsp; ${escapeHtml(t('deadline'))}: ${escapeHtml(dateStr)}</div>
+          <hr/>
+          <table>${rowsHtml(pairs)}</table>
+          ${styleClean ? `<div class="styles"><b>${escapeHtml(t('style'))}:</b> ${escapeHtml(styleClean)}</div>` : ""}
+          ${note && String(note).trim() ? `<div class="note"><b>${escapeHtml(t('garmentNote'))}:</b> ${escapeHtml(note)}</div>` : ""}
+        </div>`;
+    };
+
+    const chits = [];
+    if (o.shirtQty > 0) chits.push(chit(true));
+    if (o.pantQty > 0) chits.push(chit(false));
+    if (chits.length === 0) return;
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>chit</title><style>
+      @page { size: 80mm auto; margin: 3mm; }
+      * { box-sizing: border-box; }
+      body { font-family: 'Courier New', monospace; margin: 0; color: #000; }
+      .chit { width: 74mm; padding: 2mm 0; page-break-after: always; }
+      .chit:last-child { page-break-after: auto; }
+      .shop { text-align: center; font-weight: bold; font-size: 13px; }
+      .type { text-align: center; font-weight: bold; font-size: 18px; margin: 3px 0; border: 2px solid #000; padding: 2px; }
+      .meta { font-size: 12px; margin: 1px 0; }
+      hr { border: none; border-top: 1px dashed #000; margin: 4px 0; }
+      table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      td { padding: 2px 0; vertical-align: top; }
+      .lbl { text-transform: uppercase; }
+      .val { text-align: right; font-weight: bold; font-size: 16px; }
+      .styles { font-size: 12px; margin-top: 4px; }
+      .note { font-size: 13px; margin-top: 5px; border: 1px solid #000; padding: 3px; font-weight: bold; }
+    </style></head><body>${chits.join("")}</body></html>`;
+
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+    iframe.contentWindow.focus();
+    setTimeout(() => {
+      iframe.contentWindow.print();
+      setTimeout(() => { try { document.body.removeChild(iframe); } catch (e) {} }, 1000);
+    }, 300);
+  };
 
   useEffect(() => {
     fetchOrders();
@@ -477,7 +559,7 @@ const PendingWork = () => {
             <Modal.Body className="bg-light pt-4">
               {isEditingMeas && (
                 <div className="bg-white p-4 rounded-4 shadow-sm mb-3">
-                  {selectedOrder.shirtQty > 0 && (
+                  {selectedOrder.shirtQty > 0 && modalView === "shirt" && (
                     <>
                       <h6 className="text-primary fw-bold text-uppercase mb-3"><FaTshirt className="me-2" />{t('shirt')}</h6>
                       <Row className="g-2 mb-4">
@@ -495,7 +577,7 @@ const PendingWork = () => {
                       </div>
                     </>
                   )}
-                  {selectedOrder.pantQty > 0 && (
+                  {selectedOrder.pantQty > 0 && modalView === "pant" && (
                     <>
                       <h6 className="text-warning fw-bold text-uppercase mb-3"><FaRulerVertical className="me-2" />{t('pant')}</h6>
                       <Row className="g-2">
@@ -659,6 +741,9 @@ const PendingWork = () => {
               {!isEditingMeas ? (
                 <>
                   <Button variant="light" className="fw-bold px-4 rounded-pill border" onClick={() => setShowModal(false)}>{t('close')}</Button>
+                  <Button variant="outline-primary" className="fw-bold px-3 rounded-pill" onClick={printChits}>
+                    <FaPrint className="me-2" /> {t('printChit')}
+                  </Button>
                   <Button variant="outline-dark" className="fw-bold px-4 rounded-pill" onClick={startEditMeas}>
                     <FaEdit className="me-2" /> {t('editMeasurements')}
                   </Button>
