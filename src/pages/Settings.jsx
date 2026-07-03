@@ -18,18 +18,13 @@ const Settings = () => {
     if (savedUrl) setApiUrl(savedUrl);
   }, []);
 
-  const handleSaveApiUrl = () => {
-    localStorage.setItem("backendApiUrl", apiUrl);
-    showToast(t('apiSuccessMsg'), "success");
-  };
-
   const handleTestConnection = async () => {
     setApiStatus("testing");
     setLatency(null);
     const startTime = Date.now();
 
     try {
-      await axios.get(`${apiUrl}/pending-orders`, { timeout: 5000 });
+      await axios.get(`${apiUrl}/pending-orders`, { timeout: 60000 });
       const endTime = Date.now();
       setLatency(endTime - startTime);
       setApiStatus("success");
@@ -73,13 +68,12 @@ const Settings = () => {
               <Form.Group className="mb-4">
                 <Form.Label className="fw-bold text-secondary small text-uppercase">{t('backendBaseUrl')}</Form.Label>
                 <div className="d-flex gap-2">
-                  <Form.Control 
-                    type="text" 
-                    value={apiUrl} 
-                    onChange={(e) => setApiUrl(e.target.value)} 
-                    style={{ fontFamily: 'monospace', fontSize: '15px' }}
+                  <Form.Control
+                    type="text"
+                    value={apiUrl}
+                    readOnly
+                    style={{ fontFamily: 'monospace', fontSize: '15px', backgroundColor: '#f8f9fa' }}
                   />
-                  <Button variant="outline-primary" className="fw-bold" onClick={handleSaveApiUrl}>{t('saveApiBtn')}</Button>
                 </div>
                 <Form.Text className="text-muted">
                   {t('apiUrlDesc')}

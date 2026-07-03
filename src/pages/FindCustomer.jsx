@@ -132,13 +132,13 @@ const FindCustomer = () => {
   };
 
   const filteredAndSortedCustomers = useMemo(() => {
-    let results = customers.filter(c => 
-      c.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      c.mobileNo.includes(searchTerm) ||
+    let results = customers.filter(c =>
+      (c.fullName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.mobileNo || "").includes(searchTerm) ||
       (c.address && c.address.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-    
-    return results.sort((a, b) => a.fullName.localeCompare(b.fullName));
+
+    return results.sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""));
   }, [customers, searchTerm]);
 
   const handleCreateOrder = (customer) => {

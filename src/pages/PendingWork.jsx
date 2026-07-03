@@ -209,8 +209,8 @@ const PendingWork = () => {
 
     let results = orders.filter(
       (o) =>
-        o.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.mobileNo.includes(searchTerm),
+        (o.fullName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (o.mobileNo || "").includes(searchTerm),
     );
 
     results.sort((a, b) => new Date(a.deadlineDate) - new Date(b.deadlineDate));
