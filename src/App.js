@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import axios from "axios";
-import { FaRulerCombined, FaLock } from "react-icons/fa";
+import { FaRulerCombined, FaLock, FaCut, FaTshirt } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 // 1. IMPORT THE PROVIDER
@@ -62,12 +62,20 @@ function LoginScreen({ onLogin }) {
   return (
     <div style={{
       minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px",
-      background: "radial-gradient(circle at 50% 0%, #24243e 0%, #1a1a2e 45%, #12121f 100%)",
+      position: "relative", overflow: "hidden",
+      backgroundColor: "#1a1a2e",
+      backgroundImage: "radial-gradient(rgba(240,165,0,0.07) 1.2px, transparent 1.3px), radial-gradient(circle at 50% 12%, rgba(240,165,0,0.13), transparent 55%)",
+      backgroundSize: "24px 24px, 100% 100%",
       fontFamily: "'Segoe UI', system-ui, sans-serif"
     }}>
+      <FaCut aria-hidden="true" style={{ position: "absolute", top: "9%", left: "8%", fontSize: "120px", color: "rgba(255,255,255,0.035)", transform: "rotate(-18deg)" }} />
+      <FaRulerCombined aria-hidden="true" style={{ position: "absolute", bottom: "7%", right: "7%", fontSize: "150px", color: "rgba(255,255,255,0.035)", transform: "rotate(12deg)" }} />
+      <FaTshirt aria-hidden="true" style={{ position: "absolute", bottom: "16%", left: "11%", fontSize: "78px", color: "rgba(255,255,255,0.03)" }} />
+
       <form onSubmit={submit} style={{
+        position: "relative", zIndex: 1,
         background: "#ffffff", padding: "44px 36px 32px", borderRadius: "22px", width: "100%", maxWidth: "380px",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.45)", textAlign: "center", borderTop: "5px solid #f0a500"
+        boxShadow: "0 20px 60px rgba(0,0,0,0.5)", textAlign: "center", borderTop: "5px solid #f0a500"
       }}>
         <div style={{
           width: "78px", height: "78px", margin: "0 auto 18px", borderRadius: "50%", background: "#1a1a2e",
