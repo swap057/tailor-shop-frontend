@@ -8,7 +8,8 @@ const MeasurementCard = ({
     styleOptions, selectedStyles, onStyleChange, 
     formData, handleChange,
     onSmartEnter,
-    selectName 
+    selectName,
+    noteName
 }) => {
   
   const { t } = useLang();
@@ -122,6 +123,21 @@ const MeasurementCard = ({
               })}
             </Row>
         </div>
+
+        {noteName && (
+          <div className="mt-3">
+            <Form.Label style={{...labelStyle, color: '#f0a500', fontSize: '13px', textTransform: 'uppercase'}}>{t('garmentNote')}</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={2}
+              name={noteName}
+              value={formData[noteName] || ''}
+              onChange={handleChange}
+              placeholder={t('specialInstructions')}
+              style={{...inputStyle, height: 'auto'}}
+            />
+          </div>
+        )}
       </Card.Body>
     </Card>
   );

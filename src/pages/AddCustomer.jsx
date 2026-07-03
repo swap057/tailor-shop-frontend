@@ -627,7 +627,7 @@ const AddCustomer = () => {
     shirt_selected_styles: {},
     pant_length: "", pant_below_waist: "", pant_waist: "", pant_thigh: "",
     pant_knee: "", pant_bottom: "", pant_selected_styles: {},
-    remark: "",
+    remark: "", shirt_remark: "", pant_remark: "",
   };
 
   const [formData, setFormData] = useState(initialState);
@@ -842,6 +842,8 @@ const AddCustomer = () => {
       pantStyle: pantTotal > 0 ? getStyleString(formData.pant_selected_styles) : "None",
       pantQty: pantTotal,
       remark: formData.remark,
+      shirtRemark: shirtTotal > 0 ? formData.shirt_remark : "",
+      pantRemark: pantTotal > 0 ? formData.pant_remark : "",
     };
 
     await addOrder(orderPayload);
@@ -960,6 +962,7 @@ const AddCustomer = () => {
               handleChange={handleChange}
               onSmartEnter={handleSmartEnter}
               selectName="shirt_style_select"
+              noteName="shirt_remark"
             />
           </Col>
           <Col lg={4} md={6}>
@@ -974,6 +977,7 @@ const AddCustomer = () => {
               handleChange={handleChange}
               onSmartEnter={handleSmartEnter}
               selectName="pant_style_select"
+              noteName="pant_remark"
             />
           </Col>
         </Row>

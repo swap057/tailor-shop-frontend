@@ -65,12 +65,14 @@ const PendingWork = () => {
       shirtCollar: selectedOrder.shirtCollar ?? "",
       shirtChest: selectedOrder.shirtChest ?? "",
       shirtHalfSleeve: selectedOrder.shirtHalfSleeve ?? "",
+      shirtRemark: selectedOrder.shirtRemark ?? "",
       pantLength: selectedOrder.pantLength ?? "",
       pantBelowWaist: selectedOrder.pantBelowWaist ?? "",
       pantWaist: selectedOrder.pantWaist ?? "",
       pantThigh: selectedOrder.pantThigh ?? "",
       pantKnee: selectedOrder.pantKnee ?? "",
       pantBottom: selectedOrder.pantBottom ?? "",
+      pantRemark: selectedOrder.pantRemark ?? "",
     });
     setIsEditingMeas(true);
   };
@@ -487,6 +489,10 @@ const PendingWork = () => {
                         {measInput(t('chest'), "shirtChest")}
                         {measInput(t('halfSleeve'), "shirtHalfSleeve", "text")}
                       </Row>
+                      <div className="mb-4">
+                        <Form.Label className="text-muted fw-bold text-uppercase" style={{ fontSize: '10px' }}>{t('garmentNote')}</Form.Label>
+                        <Form.Control as="textarea" rows={2} value={measForm.shirtRemark ?? ""} onChange={(e) => setMeasForm({ ...measForm, shirtRemark: e.target.value })} />
+                      </div>
                     </>
                   )}
                   {selectedOrder.pantQty > 0 && (
@@ -500,6 +506,10 @@ const PendingWork = () => {
                         {measInput(t('knee'), "pantKnee")}
                         {measInput(t('bottom'), "pantBottom", "text")}
                       </Row>
+                      <div className="mb-2">
+                        <Form.Label className="text-muted fw-bold text-uppercase" style={{ fontSize: '10px' }}>{t('garmentNote')}</Form.Label>
+                        <Form.Control as="textarea" rows={2} value={measForm.pantRemark ?? ""} onChange={(e) => setMeasForm({ ...measForm, pantRemark: e.target.value })} />
+                      </div>
                     </>
                   )}
                 </div>
@@ -541,6 +551,12 @@ const PendingWork = () => {
                           <div className="d-flex flex-wrap gap-2">
                             {renderStyleBadges(selectedOrder.shirtStyle)}
                           </div>
+                          {selectedOrder.shirtRemark && (
+                            <div className="mt-3 p-2 rounded bg-warning bg-opacity-10 border-start border-3 border-warning">
+                              <div className="fw-bold text-uppercase text-muted" style={{ fontSize: '10px' }}>{t('garmentNote')}</div>
+                              <div className="fs-6">{selectedOrder.shirtRemark}</div>
+                            </div>
+                          )}
                         </Card.Body>
                       </Card>
                     </Col>
@@ -591,6 +607,12 @@ const PendingWork = () => {
                           <div className="d-flex flex-wrap gap-2">
                             {renderStyleBadges(selectedOrder.pantStyle)}
                           </div>
+                          {selectedOrder.pantRemark && (
+                            <div className="mt-3 p-2 rounded bg-warning bg-opacity-10 border-start border-3 border-warning">
+                              <div className="fw-bold text-uppercase text-muted" style={{ fontSize: '10px' }}>{t('garmentNote')}</div>
+                              <div className="fs-6">{selectedOrder.pantRemark}</div>
+                            </div>
+                          )}
                         </Card.Body>
                       </Card>
                     </Col>
