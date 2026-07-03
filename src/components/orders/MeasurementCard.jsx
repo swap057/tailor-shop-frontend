@@ -97,9 +97,9 @@ const MeasurementCard = ({
                       {getHelperHint(field.name, formData[field.name])}
                     </div>
                     
-                    <Form.Control 
-                      type={field.type === 'text' ? 'text' : 'number'} 
-                      inputMode={field.type === 'text' ? 'text' : 'decimal'} 
+                    <Form.Control
+                      type={field.type === 'text' ? 'text' : 'number'}
+                      inputMode="decimal"
                       name={field.name} 
                       value={formData[field.name]} 
                       onChange={handleChange}

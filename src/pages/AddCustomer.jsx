@@ -600,7 +600,7 @@
 // export default AddCustomer;
 
 import React, { useState, useEffect } from "react";
-import { Form, Button, Row, Col, Card } from "react-bootstrap";
+import { Form, Button, Row, Col, Card, Spinner } from "react-bootstrap";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaUser, FaTshirt, FaRulerVertical, FaSave, FaArrowLeft } from "react-icons/fa";
 import { useLang } from "../context/LangContext";
@@ -632,6 +632,7 @@ const AddCustomer = () => {
 
   const [formData, setFormData] = useState(initialState);
   const [currentCustomerId, setCurrentCustomerId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (location.state && location.state.prefillCustomer) {
@@ -849,6 +850,8 @@ const AddCustomer = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSaving) return; // Prevent double-submit / multiple saves
+    setIsSaving(true);
     try {
       const success = await saveToBackend();
       if (success) {
@@ -861,6 +864,8 @@ const AddCustomer = () => {
     } catch (error) {
       const backendMsg = error.response?.data?.message || t("failedToSaveNetwork");
       showToast(backendMsg, "danger");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -984,11 +989,19 @@ const AddCustomer = () => {
             </div>
           </div>
           <div className="d-flex gap-2" style={{ width: "auto", minWidth: "350px" }}>
-            <Button type="button" variant="outline-secondary" size="lg" onClick={() => navigate(-1)} style={{ width: "120px" }}>
+            <Button type="button" variant="outline-secondary" size="lg" onClick={() => navigate(-1)} style={{ width: "120px" }} disabled={isSaving}>
               <FaArrowLeft className="me-2" /> {t("back")}
             </Button>
-            <Button id="saveOrderBtn" type="submit" size="lg" className="text-white fw-bold px-4" style={{ backgroundColor: "#f0a500", border: "none", flex: 1 }}>
-              <FaSave className="me-2" /> {t("save")}
+            <Button id="saveOrderBtn" type="submit" size="lg" className="text-white fw-bold px-4" style={{ backgroundColor: "#f0a500", border: "none", flex: 1 }} disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Spinner as="span" animation="border" size="sm" className="me-2" /> {t("save")}...
+                </>
+              ) : (
+                <>
+                  <FaSave className="me-2" /> {t("save")}
+                </>
+              )}
             </Button>
           </div>
         </div>
