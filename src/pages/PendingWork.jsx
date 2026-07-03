@@ -19,7 +19,10 @@ import {
   FaWhatsapp,
   FaExclamationTriangle,
   FaTshirt,
-  FaRulerVertical
+  FaRulerVertical,
+  FaEdit,
+  FaSave,
+  FaTimes
 } from "react-icons/fa";
 import { useLang } from "../context/LangContext";
 import axios from "axios";
@@ -45,6 +48,69 @@ const PendingWork = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [progress, setProgress] = useState({ shirt: 0, pant: 0 });
   const [modalView, setModalView] = useState("shirt");
+  const [isEditingMeas, setIsEditingMeas] = useState(false);
+  const [isSavingMeas, setIsSavingMeas] = useState(false);
+  const [measForm, setMeasForm] = useState({});
+
+  const startEditMeas = () => {
+    setMeasForm({
+      shirtLength: selectedOrder.shirtLength ?? "",
+      shirtFront: selectedOrder.shirtFront ?? "",
+      shirtShoulder: selectedOrder.shirtShoulder ?? "",
+      shirtSleeve: selectedOrder.shirtSleeve ?? "",
+      shirtCollar: selectedOrder.shirtCollar ?? "",
+      shirtChest: selectedOrder.shirtChest ?? "",
+      shirtHalfSleeve: selectedOrder.shirtHalfSleeve ?? "",
+      pantLength: selectedOrder.pantLength ?? "",
+      pantBelowWaist: selectedOrder.pantBelowWaist ?? "",
+      pantWaist: selectedOrder.pantWaist ?? "",
+      pantThigh: selectedOrder.pantThigh ?? "",
+      pantKnee: selectedOrder.pantKnee ?? "",
+      pantBottom: selectedOrder.pantBottom ?? "",
+    });
+    setIsEditingMeas(true);
+  };
+
+  const handleSaveMeasurements = async () => {
+    if (isSavingMeas) return;
+    setIsSavingMeas(true);
+    // Number fields must go as numbers (empty -> 0); text fields stay as strings
+    const numFields = ["shirtFront", "shirtShoulder", "shirtSleeve", "shirtChest", "pantBelowWaist", "pantWaist", "pantThigh", "pantKnee"];
+    const payload = { orderId: selectedOrder.orderId };
+    Object.keys(measForm).forEach((k) => {
+      if (numFields.includes(k)) {
+        const n = parseFloat(measForm[k]);
+        payload[k] = isNaN(n) ? 0 : n;
+      } else {
+        payload[k] = measForm[k] ?? "";
+      }
+    });
+    try {
+      await axios.post("https://my-tailor-app-backend.onrender.com/update-measurements", payload);
+      showToast(t('measurementsUpdated'), "success");
+      setSelectedOrder({ ...selectedOrder, ...payload });
+      setIsEditingMeas(false);
+      fetchOrders();
+    } catch (error) {
+      const backendMsg = error.response?.data?.message || t('failedToSave');
+      showToast(backendMsg, "danger");
+    } finally {
+      setIsSavingMeas(false);
+    }
+  };
+
+  const measInput = (label, field, type = "number") => (
+    <Col xs={6} md={4}>
+      <Form.Label className="text-muted fw-bold text-uppercase" style={{ fontSize: '10px', marginBottom: '2px' }}>{label}</Form.Label>
+      <Form.Control
+        size="sm"
+        type={type === "text" ? "text" : "number"}
+        inputMode="decimal"
+        value={measForm[field] ?? ""}
+        onChange={(e) => setMeasForm({ ...measForm, [field]: e.target.value })}
+      />
+    </Col>
+  );
 
   useEffect(() => {
     fetchOrders();
@@ -184,6 +250,7 @@ const PendingWork = () => {
         setProgress({ shirt: res.data.shirtCompletedQty || 0, pant: res.data.pantCompletedQty || 0 });
         if (res.data.shirtQty === 0 && res.data.pantQty > 0) setModalView("pant");
         else setModalView("shirt");
+        setIsEditingMeas(false);
         setShowModal(true);
       }
     } catch (err) {
@@ -334,6 +401,38 @@ const PendingWork = () => {
             )}
 
             <Modal.Body className="bg-light pt-4">
+              {isEditingMeas && (
+                <div className="bg-white p-4 rounded-4 shadow-sm mb-3">
+                  {selectedOrder.shirtQty > 0 && (
+                    <>
+                      <h6 className="text-primary fw-bold text-uppercase mb-3"><FaTshirt className="me-2" />{t('shirt')}</h6>
+                      <Row className="g-2 mb-4">
+                        {measInput(t('length'), "shirtLength", "text")}
+                        {measInput(t('front'), "shirtFront")}
+                        {measInput(t('shoulder'), "shirtShoulder")}
+                        {measInput(t('sleeve'), "shirtSleeve")}
+                        {measInput(t('collarCuff'), "shirtCollar", "text")}
+                        {measInput(t('chest'), "shirtChest")}
+                        {measInput(t('halfSleeve'), "shirtHalfSleeve", "text")}
+                      </Row>
+                    </>
+                  )}
+                  {selectedOrder.pantQty > 0 && (
+                    <>
+                      <h6 className="text-warning fw-bold text-uppercase mb-3"><FaRulerVertical className="me-2" />{t('pant')}</h6>
+                      <Row className="g-2">
+                        {measInput(t('length'), "pantLength", "text")}
+                        {measInput(t('belowWaist'), "pantBelowWaist")}
+                        {measInput(t('waist'), "pantWaist")}
+                        {measInput(t('thigh'), "pantThigh")}
+                        {measInput(t('knee'), "pantKnee")}
+                        {measInput(t('bottom'), "pantBottom", "text")}
+                      </Row>
+                    </>
+                  )}
+                </div>
+              )}
+              {!isEditingMeas && (
               <Row className="g-4">
                 
                 {modalView === "shirt" && selectedOrder.shirtQty > 0 && (
@@ -460,12 +559,29 @@ const PendingWork = () => {
                 )}
 
               </Row>
+              )}
             </Modal.Body>
             <Modal.Footer className="bg-white border-top border-2 p-3">
-              <Button variant="light" className="fw-bold px-4 rounded-pill border" onClick={() => setShowModal(false)}>{t('close')}</Button>
-              <Button variant="dark" className="fw-bold px-4 rounded-pill" onClick={handleSaveChanges}>
-                <FaCheckCircle className="me-2" /> {t('saveUpdates')}
-              </Button>
+              {!isEditingMeas ? (
+                <>
+                  <Button variant="light" className="fw-bold px-4 rounded-pill border" onClick={() => setShowModal(false)}>{t('close')}</Button>
+                  <Button variant="outline-dark" className="fw-bold px-4 rounded-pill" onClick={startEditMeas}>
+                    <FaEdit className="me-2" /> {t('editMeasurements')}
+                  </Button>
+                  <Button variant="dark" className="fw-bold px-4 rounded-pill" onClick={handleSaveChanges}>
+                    <FaCheckCircle className="me-2" /> {t('saveUpdates')}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="secondary" className="fw-bold px-4 rounded-pill" onClick={() => setIsEditingMeas(false)} disabled={isSavingMeas}>
+                    <FaTimes className="me-2" /> {t('cancel')}
+                  </Button>
+                  <Button variant="dark" className="fw-bold px-4 rounded-pill" onClick={handleSaveMeasurements} disabled={isSavingMeas}>
+                    <FaSave className="me-2" /> {t('saveChangesBtn')}
+                  </Button>
+                </>
+              )}
             </Modal.Footer>
           </>
         )}
