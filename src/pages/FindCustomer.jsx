@@ -11,9 +11,10 @@ import {
   InputGroup
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { 
-  FaSearch, FaUser, FaPhone, FaMapMarkerAlt, FaWhatsapp, 
-  FaHistory, FaRulerCombined, FaPlus, FaArrowLeft, FaTshirt, FaRulerVertical
+import {
+  FaSearch, FaUser, FaPhone, FaMapMarkerAlt, FaWhatsapp,
+  FaHistory, FaRulerCombined, FaPlus, FaArrowLeft, FaTshirt, FaRulerVertical,
+  FaEdit, FaSave, FaTimes
 } from "react-icons/fa";
 import { useLang } from "../context/LangContext";
 import axios from "axios";
@@ -32,10 +33,51 @@ const FindCustomer = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [activeTab, setActiveTab] = useState("measurements");
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [editForm, setEditForm] = useState({ fullName: "", mobileNo: "", address: "" });
 
   useEffect(() => {
     fetchCustomers();
   }, []);
+
+  // Reset edit mode whenever the selected customer changes (or we go back to the list)
+  useEffect(() => {
+    setIsEditingProfile(false);
+  }, [selectedCustomer]);
+
+  const startEditProfile = () => {
+    setEditForm({
+      fullName: selectedCustomer.fullName || "",
+      mobileNo: selectedCustomer.mobileNo || "",
+      address: selectedCustomer.address || "",
+    });
+    setIsEditingProfile(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (isSavingProfile) return;
+    if (!editForm.fullName.trim()) { showToast(t('nameError'), "danger"); return; }
+    if (!/^\d{10}$/.test(editForm.mobileNo)) { showToast(t('mobileError'), "danger"); return; }
+    setIsSavingProfile(true);
+    try {
+      await axios.post("https://my-tailor-app-backend.onrender.com/update-customer", {
+        customerId: selectedCustomer.customerId,
+        fullName: editForm.fullName,
+        mobileNo: editForm.mobileNo,
+        address: editForm.address,
+      });
+      showToast(t('profileUpdated'), "success");
+      setSelectedCustomer({ ...selectedCustomer, fullName: editForm.fullName, mobileNo: editForm.mobileNo, address: editForm.address });
+      setIsEditingProfile(false);
+      fetchCustomers();
+    } catch (error) {
+      const backendMsg = error.response?.data?.message || t('failedToSave');
+      showToast(backendMsg, "danger");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const fetchCustomers = async () => {
     try {
@@ -194,25 +236,56 @@ const FindCustomer = () => {
               <div className="bg-white rounded-circle d-inline-flex justify-content-center align-items-center shadow-sm mb-3" style={{ width: "100px", height: "100px", border: "4px solid white" }}>
                 <FaUser size={40} className="text-secondary" />
               </div>
-              <h4 className="fw-bolder text-dark mb-1">{selectedCustomer.fullName}</h4>
-              <p className="text-muted mb-3">{t('customerId')}: #{selectedCustomer.customerId}</p>
-              
-              <div className="d-flex justify-content-center gap-2 mb-4">
-                <Button variant="success" className="rounded-pill fw-bold px-4 shadow-sm" onClick={() => openWhatsApp(selectedCustomer.mobileNo)}>
-                  <FaWhatsapp className="me-2 fs-5" /> {t('message')}
-                </Button>
-              </div>
+              {!isEditingProfile ? (
+                <>
+                  <h4 className="fw-bolder text-dark mb-1">{selectedCustomer.fullName}</h4>
+                  <p className="text-muted mb-3">{t('customerId')}: #{selectedCustomer.customerId}</p>
 
-              <div className="text-start bg-light p-3 rounded-4 border">
-                <div className="mb-2">
-                  <small className="text-muted fw-bold text-uppercase" style={{fontSize: '10px'}}>{t('mobile')}</small>
-                  <div className="fw-bold text-dark"><FaPhone className="me-2 text-primary" /> {selectedCustomer.mobileNo}</div>
+                  <div className="d-flex justify-content-center gap-2 mb-4">
+                    <Button variant="success" className="rounded-pill fw-bold px-3 shadow-sm" onClick={() => openWhatsApp(selectedCustomer.mobileNo)}>
+                      <FaWhatsapp className="me-2 fs-5" /> {t('message')}
+                    </Button>
+                    <Button variant="dark" className="rounded-pill fw-bold px-3 shadow-sm" onClick={startEditProfile}>
+                      <FaEdit className="me-2" /> {t('editProfile')}
+                    </Button>
+                  </div>
+
+                  <div className="text-start bg-light p-3 rounded-4 border">
+                    <div className="mb-2">
+                      <small className="text-muted fw-bold text-uppercase" style={{fontSize: '10px'}}>{t('mobile')}</small>
+                      <div className="fw-bold text-dark"><FaPhone className="me-2 text-primary" /> {selectedCustomer.mobileNo}</div>
+                    </div>
+                    <div>
+                      <small className="text-muted fw-bold text-uppercase" style={{fontSize: '10px'}}>{t('villageAddress')}</small>
+                      <div className="fw-bold text-dark"><FaMapMarkerAlt className="me-2 text-danger" /> {selectedCustomer.address || t('notProvided')}</div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-start">
+                  <p className="text-muted mb-3 text-center">{t('customerId')}: #{selectedCustomer.customerId}</p>
+                  <div className="mb-2">
+                    <small className="text-muted fw-bold text-uppercase" style={{fontSize: '10px'}}>{t('fullName')}</small>
+                    <Form.Control type="text" value={editForm.fullName} onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })} placeholder={t('enterName')} />
+                  </div>
+                  <div className="mb-2">
+                    <small className="text-muted fw-bold text-uppercase" style={{fontSize: '10px'}}>{t('mobile')}</small>
+                    <Form.Control type="tel" maxLength="10" value={editForm.mobileNo} onChange={(e) => { if (/^\d*$/.test(e.target.value)) setEditForm({ ...editForm, mobileNo: e.target.value }); }} placeholder={t('mobile')} />
+                  </div>
+                  <div className="mb-3">
+                    <small className="text-muted fw-bold text-uppercase" style={{fontSize: '10px'}}>{t('villageAddress')}</small>
+                    <Form.Control type="text" value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} placeholder={t('village')} />
+                  </div>
+                  <div className="d-flex gap-2">
+                    <Button variant="secondary" className="w-50 fw-bold rounded-pill" onClick={() => setIsEditingProfile(false)} disabled={isSavingProfile}>
+                      <FaTimes className="me-2" /> {t('cancel')}
+                    </Button>
+                    <Button variant="dark" className="w-50 fw-bold rounded-pill" onClick={handleSaveProfile} disabled={isSavingProfile}>
+                      <FaSave className="me-2" /> {t('saveChangesBtn')}
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <small className="text-muted fw-bold text-uppercase" style={{fontSize: '10px'}}>{t('villageAddress')}</small>
-                  <div className="fw-bold text-dark"><FaMapMarkerAlt className="me-2 text-danger" /> {selectedCustomer.address || t('notProvided')}</div>
-                </div>
-              </div>
+              )}
             </Card.Body>
           </Card>
         </Col>
