@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import axios from "axios";
+import { FaRulerCombined, FaLock } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 // 1. IMPORT THE PROVIDER
@@ -59,22 +60,63 @@ function LoginScreen({ onLogin }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#1a1a2e" }}>
-      <form onSubmit={submit} style={{ background: "#fff", padding: "40px", borderRadius: "16px", width: "340px", boxShadow: "0 10px 40px rgba(0,0,0,0.35)", textAlign: "center" }}>
-        <h3 style={{ fontWeight: "bold", color: "#1a1a2e", marginBottom: "4px" }}>NEW STAR MENS WEAR</h3>
-        <p style={{ color: "#6c757d", fontSize: "14px", marginBottom: "24px" }}>Enter shop passcode to continue</p>
-        <input
-          type="password"
-          value={pass}
-          onChange={(e) => setPass(e.target.value)}
-          placeholder="Passcode"
-          autoFocus
-          style={{ width: "100%", padding: "12px", fontSize: "16px", borderRadius: "8px", border: "1px solid #ced4da", marginBottom: "12px", textAlign: "center" }}
-        />
-        {error && <div style={{ color: "#dc3545", fontSize: "13px", marginBottom: "12px" }}>{error}</div>}
-        <button type="submit" disabled={busy} style={{ width: "100%", padding: "12px", fontSize: "16px", fontWeight: "bold", color: "#fff", backgroundColor: "#f0a500", border: "none", borderRadius: "8px", cursor: "pointer" }}>
-          {busy ? "Checking..." : "Enter"}
+    <div style={{
+      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px",
+      background: "radial-gradient(circle at 50% 0%, #24243e 0%, #1a1a2e 45%, #12121f 100%)",
+      fontFamily: "'Segoe UI', system-ui, sans-serif"
+    }}>
+      <form onSubmit={submit} style={{
+        background: "#ffffff", padding: "44px 36px 32px", borderRadius: "22px", width: "100%", maxWidth: "380px",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.45)", textAlign: "center", borderTop: "5px solid #f0a500"
+      }}>
+        <div style={{
+          width: "78px", height: "78px", margin: "0 auto 18px", borderRadius: "50%", background: "#1a1a2e",
+          display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px rgba(26,26,46,0.35)"
+        }}>
+          <FaRulerCombined size={34} color="#f0a500" />
+        </div>
+
+        <h3 style={{ fontWeight: 800, color: "#1a1a2e", marginBottom: "2px", letterSpacing: "0.5px", fontSize: "22px" }}>
+          NEW STAR MENS WEAR
+        </h3>
+        <p style={{ color: "#f0a500", fontSize: "11px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", marginBottom: "26px" }}>
+          Tailor Management
+        </p>
+
+        <div style={{ textAlign: "left", marginBottom: "6px" }}>
+          <label style={{ fontSize: "12px", fontWeight: 700, color: "#6c757d", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            Shop Passcode
+          </label>
+        </div>
+
+        <div style={{
+          display: "flex", alignItems: "center", borderRadius: "12px", padding: "0 14px", marginBottom: "4px",
+          background: "#f8f9fa", border: `1.5px solid ${error ? "#dc3545" : "#e6e6e6"}`
+        }}>
+          <FaLock color="#adb5bd" size={15} />
+          <input
+            type="password" value={pass} onChange={(e) => setPass(e.target.value)}
+            placeholder="Enter passcode" autoFocus
+            style={{ flex: 1, border: "none", outline: "none", background: "transparent", padding: "14px 10px", fontSize: "16px", color: "#1a1a2e", letterSpacing: "1px" }}
+          />
+        </div>
+
+        <div style={{ minHeight: "20px", marginBottom: "8px", textAlign: "left", paddingLeft: "4px" }}>
+          {error && <span style={{ color: "#dc3545", fontSize: "13px", fontWeight: 600 }}>{error}</span>}
+        </div>
+
+        <button type="submit" disabled={busy} style={{
+          width: "100%", padding: "13px", fontSize: "16px", fontWeight: 700,
+          color: "#1a1a2e", background: busy ? "#d9a021" : "#f0a500",
+          border: "none", borderRadius: "12px", cursor: busy ? "wait" : "pointer",
+          boxShadow: "0 6px 16px rgba(240,165,0,0.4)", letterSpacing: "0.5px"
+        }}>
+          {busy ? "Checking..." : "Unlock"}
         </button>
+
+        <p style={{ marginTop: "22px", fontSize: "11px", color: "#adb5bd" }}>
+          Authorized staff only
+        </p>
       </form>
     </div>
   );
@@ -136,7 +178,15 @@ function App() {
   };
 
   if (authState === "checking") {
-    return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#6c757d" }}>Loading...</div>;
+    return (
+      <div style={{
+        minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        gap: "16px", background: "radial-gradient(circle at 50% 0%, #24243e 0%, #1a1a2e 45%, #12121f 100%)"
+      }}>
+        <FaRulerCombined size={32} color="#f0a500" />
+        <div style={{ color: "#8a8aa0", fontSize: "12px", letterSpacing: "2px", textTransform: "uppercase" }}>Loading...</div>
+      </div>
+    );
   }
 
   if (authState === "login") {
