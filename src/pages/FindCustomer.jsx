@@ -19,6 +19,10 @@ import { useLang } from "../context/LangContext";
 import axios from "axios";
 import { useToast } from "../context/ToastContext";
 
+// Treats a measurement as "present" if it contains any non-zero digit.
+// Works for plain numbers ("6.00") and two-value strings ("12 / 6"); hides "0" / "0.00".
+const hasMeasureValue = (v) => v != null && String(v).trim() !== "" && /[1-9]/.test(String(v));
+
 const FindCustomer = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -260,7 +264,7 @@ const FindCustomer = () => {
                         <Col xs={4}><MeasurementStat label={t('shoulder')} value={selectedCustomer.measurements.shirtShoulder} /></Col>
                       </Row>
                       
-                      <Row className={`g-2 ${Number(selectedCustomer.measurements.shirtHalfSleeve) > 0 ? 'mb-2' : 'mb-5'}`}>
+                      <Row className={`g-2 ${hasMeasureValue(selectedCustomer.measurements.shirtHalfSleeve) ? 'mb-2' : 'mb-5'}`}>
                         <Col xs={4}><MeasurementStat label={t('sleeve')} value={selectedCustomer.measurements.shirtSleeve} /></Col>
                         <Col xs={4}><MeasurementStat label={t('collar')} value={selectedCustomer.measurements.shirtCollar} /></Col>
                         {Number(selectedCustomer.measurements.shirtChest) > 0 ? (
@@ -268,7 +272,7 @@ const FindCustomer = () => {
                         ) : null}
                       </Row>
 
-                      {Number(selectedCustomer.measurements.shirtHalfSleeve) > 0 ? (
+                      {hasMeasureValue(selectedCustomer.measurements.shirtHalfSleeve) ? (
                         <Row className="g-2 mb-5">
                             <Col xs={4}><MeasurementStat label={t('halfSleeve')} value={selectedCustomer.measurements.shirtHalfSleeve} highlight={true}/></Col>
                         </Row>

@@ -25,6 +25,10 @@ import { useLang } from "../context/LangContext";
 import axios from "axios";
 import { useToast } from "../context/ToastContext";
 
+// Treats a measurement as "present" if it contains any non-zero digit.
+// Works for plain numbers ("6.00") and two-value strings ("12 / 6"); hides "0" / "0.00".
+const hasMeasureValue = (v) => v != null && String(v).trim() !== "" && /[1-9]/.test(String(v));
+
 const PendingWork = () => {
   const { t } = useLang();
   const { showToast } = useToast();
@@ -345,7 +349,7 @@ const PendingWork = () => {
                             <Col xs={4}><MeasurementStat label={t('shoulder')} value={selectedOrder.shirtShoulder} /></Col>
                           </Row>
 
-                          <Row className={`g-2 ${Number(selectedOrder.shirtHalfSleeve) > 0 ? 'mb-2' : 'mb-4'}`}>
+                          <Row className={`g-2 ${hasMeasureValue(selectedOrder.shirtHalfSleeve) ? 'mb-2' : 'mb-4'}`}>
                             <Col xs={4}><MeasurementStat label={t('sleeve')} value={selectedOrder.shirtSleeve} /></Col>
                             <Col xs={4}><MeasurementStat label={t('collarCuff')} value={selectedOrder.shirtCollar} /></Col>
                             
@@ -354,7 +358,7 @@ const PendingWork = () => {
                             ) : null}
                           </Row>
 
-                          {Number(selectedOrder.shirtHalfSleeve) > 0 ? (
+                          {hasMeasureValue(selectedOrder.shirtHalfSleeve) ? (
                             <Row className="g-2 mb-4">
                               <Col xs={4}>
                                 <MeasurementStat label={t('halfSleeve')} value={selectedOrder.shirtHalfSleeve} highlight={true} />

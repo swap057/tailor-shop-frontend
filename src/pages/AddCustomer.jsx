@@ -668,7 +668,7 @@ const AddCustomer = () => {
         newFormData.shirt_sleeve = cleanNum(m.shirtSleeve);
         newFormData.shirt_collar_cuff = (!m.shirtCollar || m.shirtCollar === "0") ? "" : m.shirtCollar;
         newFormData.shirt_chest = cleanNum(m.shirtChest);
-        newFormData.shirt_half_sleeves = cleanNum(m.shirtHalfSleeve);
+        newFormData.shirt_half_sleeves = (m.shirtHalfSleeve && /[1-9]/.test(String(m.shirtHalfSleeve))) ? m.shirtHalfSleeve : "";
 
         newFormData.pant_length = cleanNum(m.pantLength);
         newFormData.pant_below_waist = cleanNum(m.pantBelowWaist);
@@ -745,7 +745,7 @@ const AddCustomer = () => {
       e.preventDefault();
       const { name, value } = e.target;
 
-      if (name === "shirt_collar_cuff") {
+      if (name === "shirt_collar_cuff" || name === "shirt_half_sleeves") {
         const currentCount = value.toString().split("/").filter((v) => v.trim() !== "").length;
         if (currentCount < 2) {
           if (!value.toString().trim().endsWith("/")) setFormData((prev) => ({ ...prev, [name]: value + " / " }));
@@ -830,7 +830,7 @@ const AddCustomer = () => {
       shirtShoulder: shirtTotal > 0 ? parseFloat(formData.shirt_shoulder) || 0 : 0,
       shirtSleeve: shirtTotal > 0 ? parseFloat(formData.shirt_sleeve) || 0 : 0,
       shirtChest: shirtTotal > 0 ? parseFloat(formData.shirt_chest) || 0 : 0,
-      shirtHalfSleeve: shirtTotal > 0 ? parseFloat(formData.shirt_half_sleeves) || 0 : 0,
+      shirtHalfSleeve: shirtTotal > 0 ? (formData.shirt_half_sleeves || "0") : "0",
       shirtStyle: shirtTotal > 0 ? getStyleString(formData.shirt_selected_styles) : "None",
       shirtQty: shirtTotal,
       pantLength: pantTotal > 0 ? formData.pant_length : "0",
@@ -890,7 +890,7 @@ const AddCustomer = () => {
     { label: t("sleeve"), name: "shirt_sleeve", ph: "00.00" },
     { label: t("collarCuff"), name: "shirt_collar_cuff", type: "text", ph: "00.00 / 00.00" },
     { label: `${t("chest")} ${t("opt")}`, name: "shirt_chest", ph: "00.00" },
-    { label: `${t("halfSleeve")} ${t("opt")}`, name: "shirt_half_sleeves", ph: "00.00" },
+    { label: `${t("halfSleeve")} ${t("opt")}`, name: "shirt_half_sleeves", type: "text", ph: "00.00 / 00.00" },
   ];
 
   const pantFields = [

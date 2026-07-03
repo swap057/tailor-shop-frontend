@@ -25,10 +25,14 @@ const MeasurementCard = ({
   };
 
   const getHelperHint = (fieldName, value) => {
-    if (fieldName !== "shirt_collar_cuff") return null;
+    const isCollar = fieldName === "shirt_collar_cuff";
+    const isHalf = fieldName === "shirt_half_sleeves";
+    if (!isCollar && !isHalf) return null;
 
     const currentCount = value ? value.toString().split('/').filter(v => v.trim() !== '').length : 0;
-    const isDone = currentCount >= 2; 
+    // Half Sleeve is optional: show no hint until the user starts typing
+    if (isHalf && currentCount === 0) return null;
+    const isDone = currentCount >= 2;
 
     return (
         <small 
@@ -87,8 +91,9 @@ const MeasurementCard = ({
             <Row className="g-3"> 
               {fields.map((field) => {
                 const isCollar = field.name === "shirt_collar_cuff";
+                const isHalf = field.name === "shirt_half_sleeves";
                 const currentCount = formData[field.name] ? formData[field.name].toString().split('/').filter(v=>v.trim()!=='').length : 0;
-                const isWarningBorder = isCollar && currentCount < 2;
+                const isWarningBorder = (isCollar && currentCount < 2) || (isHalf && currentCount === 1);
 
                 return (
                   <Col xs={12} key={field.name}>
