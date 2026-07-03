@@ -35,6 +35,11 @@ const Settings = () => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("appPasscode");
+    window.location.reload();
+  };
+
   const handleClearCache = (type) => {
     if (window.confirm(`${t('clearConfirm1')}${type}${t('clearConfirm2')}`)) {
       if (type === "Session Storage") sessionStorage.clear();
@@ -55,7 +60,10 @@ const Settings = () => {
           <h4 className="fw-bolder text-dark mb-1">{t('systemSettings')}</h4>
           <p className="text-muted small mb-0">{t('settingsDesc')}</p>
         </div>
-        <Badge bg="dark" className="p-2 fs-6">v1.0.0-beta</Badge>
+        <div className="d-flex align-items-center gap-2">
+          <Button variant="outline-danger" size="sm" className="fw-bold" onClick={handleLogout}>{t('logout')}</Button>
+          <Badge bg="dark" className="p-2 fs-6">v1.0.0-beta</Badge>
+        </div>
       </div>
 
       <Row className="g-4">
